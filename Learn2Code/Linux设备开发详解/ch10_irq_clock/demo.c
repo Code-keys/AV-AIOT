@@ -1,4 +1,4 @@
-#include <irq.h>
+#include <linux/irq.h>
 
 namespace base{
 
@@ -78,7 +78,81 @@ void local_irq_store_enable(void);
 
 
 // 10.3.5 : 内核定时器:
-    
+    DEFINE_TIMER(_name, _func, _expire/*time remain*/, _data);
+    __setup_timer( _timer, _fun, _data, _flags);
+    void add_timer( struct timer_list *timer);
+    int del_timer( struct timer_list * timer); // _sync 
+    int mod_timer( struct timer_list * timer);
+
+    // 高精度 timer
+
+    // struct delayed_work        
+        { work, timer, cpu, work_queue  } 
+      // schedule_delayed_work( )
+      // cancel_delayed_work( )
+
+      namespace second-device{
+          /*  定时IO操作于  file-device  */
+            #include <linux/module.h>
+            #include <linux/fs.h>
+            #include <linux/mm.h>
+            #include <linux/init.h>
+            #include <linux/cdev.h>
+            #include <linux/slab.h> 
+            #include <linux/uaccess.h> 
+            #define SECOND_MAJOR 248
+
+            static int second_major = SECOND_MAJOR;
+            module_param(second_major, int, S_IRUGO);
+            struct second_dev{
+                struct cdev cdev;
+                atomic_t counter;
+                struct timer_list s_timer;
+            } 
+            static struct second_dev *second_devp;
+
+            static void second_timer_handler( unsigned ling arg){
+                mod_timer( &second_devp->s_timer, jiffies + HZ);
+                printk(KERN_INFO "current jiffies is %ld \n", jiffies);
+            }
+            static int second_open(struct inode *inode, struct fime* filp){
+                init_timers(&second_devp);
+                second_devp->s_timer.function = &second_timer_handler;
+                second_devp->s_timer.expires = jiffies + HZ;
+                add_timer( &second_devp->s_timer);
+                atomic_set(&second_devp->counter, 0);
+                return 0;
+            }
+            static int second_release( struct inode *inode, struct file* filp ){
+                del_timer( &second_devp->timer );
+                return 0;
+            }
+            static ssize_t second_read( struct file* filp, char __user *buff, size_t, count, loff_t *ppos){
+                int coounter;
+                counter = atomic_read( &secnd_devp->counter );
+                if(put_user(counter, (int*) buf ))
+                    return -EFAULT;
+                else
+                    return sizeof( unsigned int );
+            }
+            struct const struct file_operations second_fops = {
+                .ower = THIS_MODULE;
+                .open = second_open;
+                .release = second_release;
+                .read = second_read; 
+            }
+            static void second_setup_cdev(struct second_dev *dev, int index){
+                int err, devnno = MKDEV(second_major, ondex);
+                cdev_init( &dev->cdev, devno, 1);
+                
+            }
+            
+
+
+      }
+
+
+
 
 
 }
