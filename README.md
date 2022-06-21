@@ -1,4 +1,8 @@
 # AV-AIOT
 audio&amp;video dev Leaning
 
-# to do
+# FFmpeg
+
+# gstreamer
+
+# openMax
